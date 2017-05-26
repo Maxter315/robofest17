@@ -2,6 +2,8 @@
 #include <stdint.h>
 //#include <Servo.h>
 
+#define DELTATIME 100
+
 #define S1 0
 #define S2 1
 #define S3 2
@@ -11,6 +13,7 @@
 AF_DCMotor leftMotor(2);
 AF_DCMotor rightMotor(2);
 
+unsigned long prevMillis, currentMillis;
 int16_t s1,s2,s3,s4,s5;		//readings
 
 int16_t defineLine(int16_t s1, int16_t s2, int16_t s3, int16_t s4, int16_t s5);
@@ -29,8 +32,12 @@ void setup(){
 }
 
 void loop(){
-	
 
+	currentMillis = millis();
+	if (currentMillis - prevMillis >= DELTATIME){
+		prevMillis = currentMillis;
+		
+	}
 }
 
 int16_t defineLine(int16_t s1, int16_t s2, int16_t s3, int16_t s4, int16_t s5){
@@ -48,7 +55,7 @@ int16_t defineLine(int16_t s1, int16_t s2, int16_t s3, int16_t s4, int16_t s5){
 	return out;
 }
 
-int16_t calcReaction(){
+int16_t calcReaction(int16_t in){
 	int16_t out;
 
 	return out;
