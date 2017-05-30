@@ -15,8 +15,10 @@ AF_DCMotor rightMotor(2);
 
 unsigned long prevMillis, currentMillis;
 int16_t s1,s2,s3,s4,s5;		//readings
+int16_t sens[5];			//readings
+uint8_t minSens, maxSens;
 
-int16_t defineLine(int16_t s1, int16_t s2, int16_t s3, int16_t s4, int16_t s5);
+int16_t defineLine(void);
 int16_t calcReaction(int16_t input);
 void readSensors(void);
 
@@ -40,17 +42,24 @@ void loop(){
 	}
 }
 
-int16_t defineLine(int16_t s1, int16_t s2, int16_t s3, int16_t s4, int16_t s5){
+int16_t defineLine(void){
 	int16_t out;
 	int16_t acc;
+	int16_t tmp[5];
 
-	acc += s1 * 0;
-	acc += s2 * 15;
-	acc += s3 * 30;
-	acc += s4 * 45;
-	acc += s5 * 60;
+	tmp[0] = sens[0] - sens[minSens];
+	tmp[1] = sens[1] - sens[minSens];
+	tmp[2] = sens[2] - sens[minSens];
+	tmp[3] = sens[3] - sens[minSens];
+	tmp[4] = sens[4] - sens[minSens];
 
-	out = acc / (s1+s2+s3+s4+s5);
+	acc += tmp[0] * 0;
+	acc += tmp[1] * 15;
+	acc += tmp[2] * 30;
+	acc += tmp[3] * 45;
+	acc += tmp[4] * 60;
+
+	out = acc / (tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4]);
 
 	return out;
 }
@@ -62,9 +71,32 @@ int16_t calcReaction(int16_t in){
 }
 
 void readSensors(void){
-	s1 = analogRead(S1);
-	s2 = analogRead(S2);
-	s3 = analogRead(S3);
-	s4 = analogRead(S4);
-	s5 = analogRead(S5);
+	sens[0] = analogRead(S1);
+	sens[1] = analogRead(S2);
+	sens[2] = analogRead(S3);
+	sens[3] = analogRead(S4);
+	sens[4] = analogRead(S5);
+
+	minSens = 1;
+	maxSens = 1;
+
+for (uint8_t i = 1; i < 5; i++){
+	if (sens[i-1] < sens[i]) 	maxSens = i;
+	else 						minSens = i;
+}
+
+
+/*
+	if (s1 < s2)	maxSens = 2;
+	else 			minSens = 2;
+
+	if (s2 < s3)	maxSens = 3;
+	else 			minSens = 3;
+
+	if (s3 < s4)	maxSens = 4;
+	else 			minSens = 4;
+
+	if (s4 < s5)	maxSens = 5;
+	else 			minSens = 5;
+*/
 }
