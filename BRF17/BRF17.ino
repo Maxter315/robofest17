@@ -28,6 +28,7 @@ uint8_t minSens, maxSens;
 uint16_t minVal, maxVal;
 uint16_t thrL, thrR;
 
+int8_t tmp_sig;
 
 
 /* ----- Functions ----- */
@@ -57,7 +58,7 @@ void setup(){
 	//pinMode(LED4, OUTPUT);
 	//pinMode(LED5, OUTPUT);
 
-
+	sensInit();
 }
 
 /* ----- MAIN LOOP ----- */
@@ -67,6 +68,11 @@ void loop(){
 	if (currentMillis - prevMillis >= DELTATIME){
 		prevMillis = currentMillis;
 		
+		readSensors();
+
+		tmp_sig	= reactPID(defineLine());
+		reactDRV(tmp_sig);
+
 	}
 }
 /* ----- END OF LOOP ----- */
@@ -137,6 +143,9 @@ int16_t defineLine(void){
 	out = acc / (tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4]);
 	*/
 
+	if 		((sens[1] > 600) && (sens[3] < 500)) out = 32;
+	else if ((sens[3] > 600) && (sens[1] < 500)) out = -32;
+	else out = 0;
 
 	return out;
 }
@@ -144,7 +153,7 @@ int16_t defineLine(void){
 
 int8_t reactPID(int16_t in){
 	int8_t out;
-
+	out = (int8_t)in;
 	return out;
 }
 
