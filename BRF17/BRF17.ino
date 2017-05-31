@@ -124,7 +124,7 @@ uint8_t modeCtrl(void){
 
 
 void reactDRV(int16_t sig){
-
+/*
 	if (sig > 0){
 		pwm_l = 0;
 		//pwm_l = -(KF) * sig + PWMMAX;
@@ -137,9 +137,18 @@ void reactDRV(int16_t sig){
 		pwm_r = PWMMAX;
 		pwm_l = PWMMAX;
 	}
+*/
+	//pwm_l_c = pwm_l;
+	//pwm_r_c = pwm_r;
+	
+	pwm_l_c += sig;
+	pwm_r_c -= sig;
 
-	pwm_l_c = pwm_l;
-	pwm_r_c = pwm_r;
+	if(pwm_l_c > PWMMAX) pwm_l_c = PWMMAX;
+	if(pwm_r_c > PWMMAX) pwm_r_c = PWMMAX;
+	if(pwm_l_c < 0) pwm_l_c = 0;
+	if(pwm_l_c < 0) pwm_l_c = 0;
+	
 
 	leftMotor.setSpeed(pwm_l_c);
 	leftMotor.run(FORWARD);
