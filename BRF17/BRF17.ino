@@ -4,35 +4,59 @@
 
 #define DELTATIME 100
 
-#define S1 0
-#define S2 1
-#define S3 2
-#define S4 3
-#define S5 4
+#define LED1 7
+#define LED2 8
+#define LED3 9
+#define LED4 10
+#define LED5 11
 
+#define PWMMAX 100
+#define SLOPE_K 2
+
+/* ----- Variables & Objects ----- */
 AF_DCMotor leftMotor(2);
-AF_DCMotor rightMotor(2);
+AF_DCMotor rightMotor(1);
+
+uint8_t pwm_l, pwm_r;
+uint8_t pwm_l_c, pwm_r_c;
 
 unsigned long prevMillis, currentMillis;
 int16_t s1,s2,s3,s4,s5;		//readings
 int16_t sens[5];			//readings
 uint8_t minSens, maxSens;
 
-int16_t defineLine(void);
-int16_t calcReaction(int16_t input);
+
+
+/* ----- Functions ----- */
 void readSensors(void);
+int16_t defineLine(void);
+int16_t reactPID(int16_t input);
+uint8_t modeCtrl(void);
+void reactDRV(int16_t);
 
+
+/* ----- INITIALIZATION ----- */
 void setup(){
-	pinMode(S1, INPUT);
-	pinMode(S2, INPUT);
-	pinMode(S3, INPUT);
-	pinMode(S4, INPUT);
-	pinMode(S5, INPUT);
-
+/*
+	pinMode(A1, INPUT);
+	pinMode(A2, INPUT);
+	pinMode(A3, INPUT);
+	pinMode(A4, INPUT);
+	pinMode(A5, INPUT);
+*/
 	leftMotor.run(RELEASE);
 	rightMotor.run(RELEASE);
+
+	//pinMode(LED1, OUTPUT);
+	//pinMode(LED2, OUTPUT);
+	//pinMode(LED3, OUTPUT);
+	//pinMode(LED4, OUTPUT);
+	//pinMode(LED5, OUTPUT);
+
+
 }
 
+/* ----- MAIN LOOP ----- */
 void loop(){
 
 	currentMillis = millis();
@@ -41,6 +65,26 @@ void loop(){
 		
 	}
 }
+/* ----- END OF LOOP ----- */
+
+
+/* ----- Functions ----- */
+void readSensors(void){
+	sens[0] = analogRead(A1);
+	sens[1] = analogRead(A2);
+	sens[2] = analogRead(A3);
+	sens[3] = analogRead(A4);
+	sens[4] = analogRead(A5);
+
+	minSens = 1;
+	maxSens = 1;
+
+	for (uint8_t i = 1; i < 5; i++){
+		if (sens[i-1] < sens[i]) 	maxSens = i;
+		else 						minSens = i;
+	}
+}
+
 
 int16_t defineLine(void){
 	int16_t out;
@@ -64,39 +108,42 @@ int16_t defineLine(void){
 	return out;
 }
 
-int16_t calcReaction(int16_t in){
+
+int16_t reactPID(int16_t in){
 	int16_t out;
 
 	return out;
 }
 
-void readSensors(void){
-	sens[0] = analogRead(S1);
-	sens[1] = analogRead(S2);
-	sens[2] = analogRead(S3);
-	sens[3] = analogRead(S4);
-	sens[4] = analogRead(S5);
 
-	minSens = 1;
-	maxSens = 1;
+uint8_t modeCtrl(void){
+	uint8_t res;
 
-for (uint8_t i = 1; i < 5; i++){
-	if (sens[i-1] < sens[i]) 	maxSens = i;
-	else 						minSens = i;
+	return res;
 }
 
 
-/*
-	if (s1 < s2)	maxSens = 2;
-	else 			minSens = 2;
+void reactDRV(int16_t sig){
 
-	if (s2 < s3)	maxSens = 3;
-	else 			minSens = 3;
+	if (sig > 0){
+		pwm_l = 0;
+		//pwm_l = -(KF) * sig + PWMMAX;
+		pwm_r = PWMMAX;
+	}else if (sig < 0){
+		pwm_r = 0;
+		//pwm_r = (KF) * sig + PWMMAX;
+		pwm_l = PWMMAX;
+	}else{
+		pwm_r = PWMMAX;
+		pwm_l = PWMMAX;
+	}
 
-	if (s3 < s4)	maxSens = 4;
-	else 			minSens = 4;
+	pwm_l_c = pwm_l;
+	pwm_r_c = pwm_r;
 
-	if (s4 < s5)	maxSens = 5;
-	else 			minSens = 5;
-*/
+	leftMotor.setSpeed(pwm_l_c);
+	leftMotor.run(FORWARD);
+
+	rightMotor.setSpeed(pwm_r_c);
+	rightMotor.run(FORWARD);
 }
