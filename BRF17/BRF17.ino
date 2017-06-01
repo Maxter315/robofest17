@@ -182,6 +182,7 @@ int16_t defineLine(void){
 		tmp[3] = (float)(sens[3] - minv);
 		tmp[4] = (float)(sens[4] - minv);
 	}
+
 /*
   Serial.print(tmp[0]); Serial.print("\t");
   Serial.print(tmp[1]); Serial.print("\t");
@@ -209,6 +210,8 @@ int16_t defineLine(void){
 
 int8_t reactPID(int16_t in){
 	int8_t out;
+	if(in > 127) in = 127;
+	else if(in<-128) in = -128;
 	out = (int8_t)in;
 	return out;
 }
