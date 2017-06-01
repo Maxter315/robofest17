@@ -24,7 +24,8 @@ unsigned long prevMillis, currentMillis;
 
 int16_t s1,s2,s3,s4,s5;		//readings
 int16_t sens[5];			//readings
-float eq[5];
+float eq[5];				//equal coeffs
+
 uint8_t minSens, maxSens;
 uint16_t minVal, maxVal;
 uint16_t thrL, thrR;
@@ -43,14 +44,8 @@ void reactDRV(int8_t in);
 
 /* ----- INITIALIZATION ----- */
 void setup(){
-  Serial.begin(9600);
-/*
-	pinMode(A1, INPUT);
-	pinMode(A2, INPUT);
-	pinMode(A3, INPUT);
-	pinMode(A4, INPUT);
-	pinMode(A5, INPUT);
-*/
+	Serial.begin(9600);
+
 	leftMotor.run(RELEASE);
 	rightMotor.run(RELEASE);
 
@@ -61,12 +56,12 @@ void setup(){
 	//pinMode(LED5, OUTPUT);
 
 
-  //leftMotor.setSpeed(125);
-  //leftMotor.run(FORWARD);
+	//leftMotor.setSpeed(125);
+	//leftMotor.run(FORWARD);
 
-  //rightMotor.setSpeed(255);
-  //rightMotor.run(FORWARD);
-  
+	//rightMotor.setSpeed(255);
+	//rightMotor.run(FORWARD);
+
 	sensInit();
 }
 
@@ -78,21 +73,21 @@ void loop(){
 		prevMillis = currentMillis;
 		
 		readSensors();/*
-  Serial.print(sens[0]); Serial.print("\t");
-  Serial.print(sens[1]); Serial.print("\t");
-  Serial.print(sens[2]); Serial.print("\t");
-  Serial.print(sens[3]); Serial.print("\t");
-  Serial.println(sens[4]);
+	Serial.print(sens[0]); Serial.print("\t");
+	Serial.print(sens[1]); Serial.print("\t");
+	Serial.print(sens[2]); Serial.print("\t");
+	Serial.print(sens[3]); Serial.print("\t");
+	Serial.println(sens[4]);
 
-  Serial.print(eq[0]*((float)sens[0])); Serial.print("\t");
-  Serial.print(eq[1]*((float)sens[1])); Serial.print("\t");
-  Serial.print(eq[2]*((float)sens[2])); Serial.print("\t");
-  Serial.print(eq[3]*((float)sens[3])); Serial.print("\t");
-  Serial.println(eq[4]*((float)sens[4]));
+	Serial.print(eq[0]*((float)sens[0])); Serial.print("\t");
+	Serial.print(eq[1]*((float)sens[1])); Serial.print("\t");
+	Serial.print(eq[2]*((float)sens[2])); Serial.print("\t");
+	Serial.print(eq[3]*((float)sens[3])); Serial.print("\t");
+	Serial.println(eq[4]*((float)sens[4]));
   
   */
-		tmp_sig	= reactPID(defineLine());
-   Serial.println(tmp_sig);
+	tmp_sig	= reactPID(defineLine());
+	Serial.println(tmp_sig);
 		//reactDRV(tmp_sig);
 
 	}
@@ -169,16 +164,24 @@ int16_t defineLine(void){
 	
 	//int16_t acc;
 	//int16_t tmp[5];
- float tmp[5], acc;
+	float tmp[5], acc;
 	int16_t minv;
 	minv = sens[minSens];
- if(minv> 200) minv = 200;
+	if(minv> 200) minv = 200;
 
-	tmp[0] = eq[0] * (float)(sens[0] - minv);
-	tmp[1] = eq[1] * (float)(sens[1] - minv);
-	tmp[2] = eq[2] * (float)(sens[2] - minv);
-	tmp[3] = eq[3] * (float)(sens[3] - minv);
-	tmp[4] = eq[4] * (float)(sens[4] - minv);
+	if(0){
+		tmp[0] = eq[0] * (float)(sens[0] - minv);
+		tmp[1] = eq[1] * (float)(sens[1] - minv);
+		tmp[2] = eq[2] * (float)(sens[2] - minv);
+		tmp[3] = eq[3] * (float)(sens[3] - minv);
+		tmp[4] = eq[4] * (float)(sens[4] - minv);
+	}else{
+		tmp[0] = (float)(sens[0] - minv);
+		tmp[1] = (float)(sens[1] - minv);
+		tmp[2] = (float)(sens[2] - minv);
+		tmp[3] = (float)(sens[3] - minv);
+		tmp[4] = (float)(sens[4] - minv);
+	}
 /*
   Serial.print(tmp[0]); Serial.print("\t");
   Serial.print(tmp[1]); Serial.print("\t");
@@ -188,12 +191,12 @@ int16_t defineLine(void){
 */
   
 	acc += tmp[0] * 0;
-	acc += tmp[1] * 15;
-	acc += tmp[2] * 30;
-	acc += tmp[3] * 45;
-	acc += tmp[4] * 60;
+	acc += tmp[1] * 500;
+	acc += tmp[2] * 1000;
+	acc += tmp[3] * 1500;
+	acc += tmp[4] * 2000;
 
-	out = (uint16_t)((acc / (tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4])));
+	out = (int16_t)((acc / (tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4])));
 	
 /*
 	if 		((sens[1] > 600) && (sens[3] < 500)) out = 32;
