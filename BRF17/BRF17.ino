@@ -151,20 +151,19 @@ for(int i = 0; i<5; i++){
 
 void readSensors(void){
 
-  if(0){
-	sens[0] = 1024 - analogRead(A1);
-	sens[1] = 1024 - analogRead(A2);
-	sens[2] = 1024 - analogRead(A3);
-	sens[3] = 1024 - analogRead(A4);
-	sens[4] = 1024 - analogRead(A5);
-  }else{
-  sens[0] = analogRead(A1);
-  sens[1] = analogRead(A2);
-  sens[2] = analogRead(A3);
-  sens[3] = analogRead(A4);
-  sens[4] = analogRead(A5);
-    
-  }
+	if(0){
+		sens[0] = 1024 - analogRead(A1);
+		sens[1] = 1024 - analogRead(A2);
+		sens[2] = 1024 - analogRead(A3);
+		sens[3] = 1024 - analogRead(A4);
+		sens[4] = 1024 - analogRead(A5);
+	}else{
+		sens[0] = analogRead(A1);
+		sens[1] = analogRead(A2);
+		sens[2] = analogRead(A3);
+		sens[3] = analogRead(A4);
+		sens[4] = analogRead(A5);
+	}
 	minSens = 0;
 	maxSens = 0;
 
@@ -177,16 +176,16 @@ void readSensors(void){
 
 int16_t defineLine(void){
 	int16_t out;
-	
+	uint8_t on_line = 0;
+
 	//int16_t acc;
 	//int16_t tmp[5];
 	float tmp[5], acc;
 	int16_t minv;
+	
 	minv = sens[minSens];
 	if(minv> 400) minv = 400;
- 
-uint8_t on_line = 0;
-  
+
 	if(0){
 		tmp[0] = eq[0] * (float)(sens[0] - minv);
 		tmp[1] = eq[1] * (float)(sens[1] - minv);
@@ -194,20 +193,19 @@ uint8_t on_line = 0;
 		tmp[3] = eq[3] * (float)(sens[3] - minv);
 		tmp[4] = eq[4] * (float)(sens[4] - minv);
 	}else{
-    for(int i=0;i<5;i++){
+	for(int i=0;i<5;i++){
 		tmp[i] = (float)(sens[i] - minv);
 		if (tmp[i]>sig_thr) on_line = 1;
 		}
-   }
+	}
 
-
-  Serial.print(tmp[0]); Serial.print("\t");
-  Serial.print(tmp[1]); Serial.print("\t");
-  Serial.print(tmp[2]); Serial.print("\t");
-  Serial.print(tmp[3]); Serial.print("\t");
-  Serial.println(tmp[4]);
-
-  
+/*
+	Serial.print(tmp[0]); Serial.print("\t");
+	Serial.print(tmp[1]); Serial.print("\t");
+	Serial.print(tmp[2]); Serial.print("\t");
+	Serial.print(tmp[3]); Serial.print("\t");
+	Serial.println(tmp[4]);
+*/
 	acc += tmp[0] * -100;
 	acc += tmp[1] * -50;
 	acc += tmp[2] * 0;
@@ -230,16 +228,16 @@ uint8_t on_line = 0;
 int16_t reactPID(int16_t in){
 	int16_t out;
 
-out = (int16_t)(Kp * (float)in + Kd * (float)(in - pr_error));
-pr_error = in;
+	out = (int16_t)(Kp * (float)in + Kd * (float)(in - pr_error));
+	pr_error = in;
 
 	/*Serial.print("in: "); Serial.print(in);
 	Serial.print("\tout: "); Serial.print(out); */
 	return out;
 }
 
-void reactDRV(int16_t sig){
 
+void reactDRV(int16_t sig){
 	pwm_l_c = base_pwm + sig;
 	pwm_r_c = base_pwm - sig;
 
@@ -247,7 +245,7 @@ void reactDRV(int16_t sig){
 	if(pwm_r_c > pwm_max) pwm_r_c = pwm_max;
 	if(pwm_l_c < 0) pwm_l_c = 0;
 	if(pwm_r_c < 0) pwm_r_c = 0;
-  
+
 /*
   Serial.print("\t");
   Serial.print(pwm_l_c);
@@ -262,8 +260,8 @@ void reactDRV(int16_t sig){
 	rightMotor.run(FORWARD);
 }
 
-void varMod(void){
 
+void varMod(void){
 	if(c_is_pressed) var_ptr++;
 	if(var_ptr > 6) var_ptr = 0;
 
@@ -285,6 +283,7 @@ void varMod(void){
 	}
 }
 
+
 void checkButt(void){
 	uint8_t curr_st;
 
@@ -299,8 +298,8 @@ void checkButt(void){
 	curr_st = digitalRead(BUTR);
 	if (curr_st && !pr_br) r_is_pressed = 1;
 	pr_br = curr_st;
-
 }
+
 
 
 void showSelectedVar(void){
