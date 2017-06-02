@@ -53,7 +53,9 @@ void readSensors(void);
 int16_t defineLine(void);
 int16_t reactPID(int16_t input);
 void reactDRV(int16_t in);
-void varMod(void)
+void varMod(void);
+void checkButt(void);
+void showSelectedVar(void);
 
 /* ============================================= */
 /* ============= INITIALIZATION ================ */
