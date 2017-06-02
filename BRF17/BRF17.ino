@@ -6,17 +6,32 @@
 
 #define LED1 2
 
+#define BUTL 9
+#define BUTR 13
+#define BUTC 0
+
 #define PWMMAX 255
 #define BASEPWM 200
 
-/* ----- Variables & Objects ----- */
+/* ---------- Variables & Objects ---------- */
 AF_DCMotor leftMotor(1);
 AF_DCMotor rightMotor(2);
 
 uint8_t pwm_l, pwm_r;
 int16_t pwm_l_c, pwm_r_c;
+
 float Kp = 4.0, Kd = 0;
 int16_t pr_error;
+
+uint8_t button_state, prev_bs;
+uint8_t pr_bc = 1, pr_bl = 1, pr_br = 1;
+uint8_t	r_is_pressed, l_is_pressed, c_is_pressed;
+uint8_t var_ptr = 0;
+int16_t sig_thr;
+int16_t base_pwm = 200;
+int16_t pwm_max = 255;
+
+uint8_t cntr = 1000;
 
 unsigned long prevMillis, currentMillis;
 
@@ -30,17 +45,17 @@ uint16_t thrL, thrR;
 
 int16_t tmp_sig;
 int16_t prev_pos;
+/* ----------------------------------------- */
 
-
-/* ----- Functions ----- */
+/* --------------- Functions --------------- */
 uint8_t sensInit(void);
 void readSensors(void);
 int16_t defineLine(void);
 int16_t reactPID(int16_t input);
-uint8_t modeCtrl(void);
 void reactDRV(int16_t in);
+void varMod(void)
 
-
+/* ============================================= */
 /* ============= INITIALIZATION ================ */
 void setup(){
 	Serial.begin(9600);
@@ -50,33 +65,45 @@ void setup(){
 
 	pinMode(LED1, OUTPUT);
 
+	pinMode(BUTC, INPUT);
+	pinMode(BUTL, INPUT);
+	pinMode(BUTR, INPUT);
+
 	sensInit();
 }
 
 /* ================ MAIN LOOP ================== */
 void loop(){
-  digitalWrite(LED1,LOW);
+
 	currentMillis = millis();
 	if (currentMillis - prevMillis >= DELTATIME){
 		prevMillis = currentMillis;
-		digitalWrite(LED1,HIGH);
-		readSensors();
-    
-	  tmp_sig	= reactPID(defineLine());
-	  //Serial.println(tmp_sig);
-		reactDRV(tmp_sig);
+	
+		checkButt();
+		varMod();
+		showSelectedVar();
 
+		readSensors();
+		tmp_sig = reactPID(defineLine());
+		//Serial.println(tmp_sig);
+
+		if(var_ptr == 5){
+			leftMotor.run(RELEASE);
+			rightMotor.run(RELEASE);
+		}else{
+			reactDRV(tmp_sig);
+		}
 	}
 }
 /* ================ END OF LOOP ================ */
+/* ============================================= */
 
-
-/* ----- Functions ----- */
+/* ---------- Functions ---------- */
 uint8_t sensInit(void){
 	uint8_t out;
 
 	digitalWrite(LED1, HIGH);
-	delay(500);
+	delay(1000);
 	digitalWrite(LED1, LOW);
 
 	readSensors();
@@ -167,7 +194,7 @@ uint8_t on_line = 0;
 	}else{
     for(int i=0;i<5;i++){
 		tmp[i] = (float)(sens[i] - minv);
-		if (tmp[i]>100) on_line = 1;
+		if (tmp[i]>sig_thr) on_line = 1;
 		}
    }
 
@@ -187,17 +214,13 @@ uint8_t on_line = 0;
 
 	out = (int16_t)((acc / (tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4])));
 
- if(!on_line){
-  if (prev_pos < 0) out = -50;
-  else out = 50;
- }else{
-  prev_pos = out;
- }
-/*
-	if 		((sens[1] > 600) && (sens[3] < 500)) out = 32;
-	else if ((sens[3] > 600) && (sens[1] < 500)) out = -32;
-	else out = 0;
-*/
+	if(!on_line){
+		if (prev_pos < 0) out = -50;
+		else out = 50;
+	}else{
+		prev_pos = out;
+	}
+
 	return out;
 }
 
@@ -207,32 +230,19 @@ int16_t reactPID(int16_t in){
 
 out = (int16_t)(Kp * (float)in + Kd * (float)(in - pr_error));
 pr_error = in;
- /*
-	if(in > 127) in = 127;
-	else if(in<-128) in = -128;
-	out = (int8_t)in;
-	*/
-  /*
-  Serial.print("in: "); Serial.print(in);
-  Serial.print("\tout: "); Serial.print(out); */
+
+	/*Serial.print("in: "); Serial.print(in);
+	Serial.print("\tout: "); Serial.print(out); */
 	return out;
 }
 
-
-uint8_t modeCtrl(void){
-	uint8_t res;
-
-	return res;
-}
-
-
 void reactDRV(int16_t sig){
 
-	pwm_l_c = BASEPWM + sig;
-	pwm_r_c = BASEPWM - sig;
+	pwm_l_c = base_pwm + sig;
+	pwm_r_c = base_pwm - sig;
 
-	if(pwm_l_c > PWMMAX) pwm_l_c = PWMMAX;
-	if(pwm_r_c > PWMMAX) pwm_r_c = PWMMAX;
+	if(pwm_l_c > pwm_max) pwm_l_c = pwm_max;
+	if(pwm_r_c > pwm_max) pwm_r_c = pwm_max;
 	if(pwm_l_c < 0) pwm_l_c = 0;
 	if(pwm_r_c < 0) pwm_r_c = 0;
   
@@ -248,4 +258,54 @@ void reactDRV(int16_t sig){
 
 	rightMotor.setSpeed(pwm_r_c);
 	rightMotor.run(FORWARD);
+}
+
+void varMod(void){
+
+	if(c_is_pressed) var_ptr++;
+	if(var_ptr > 6) var_ptr = 0;
+
+	if(var_ptr == 0){
+		if(r_is_pressed) {	sig_thr += 5;		r_is_pressed = 0;}
+		if(l_is_pressed) {	sig_thr -= 5;		l_is_pressed = 0;}
+	}else if(var_ptr == 1){
+		if(r_is_pressed) {	base_pwm += 5;		r_is_pressed = 0;}
+		if(l_is_pressed) {	base_pwm -= 5;		l_is_pressed = 0;}
+	}else if(var_ptr == 2){
+		if(r_is_pressed) {	pwm_max += 5;		r_is_pressed = 0;}
+		if(l_is_pressed) {	pwm_max -= 5;		l_is_pressed = 0;}
+	}else if(var_ptr == 3){
+		if(r_is_pressed) {	Kp += 0.1;		r_is_pressed = 0;}
+		if(l_is_pressed) {	Kp -= 0.1;		l_is_pressed = 0;}
+	}else if(var_ptr == 4){
+		if(r_is_pressed) {	Kd += 0.1;		r_is_pressed = 0;}
+		if(l_is_pressed) {	Kd -= 0.1;		l_is_pressed = 0;}
+	}
+}
+
+void checkButt(void){
+	uint8_t curr_st;
+
+	curr_st = digitalRead(BUTC);
+	if (curr_st && !pr_bc) c_is_pressed = 1;
+	pr_bc = curr_st;
+
+	curr_st = digitalRead(BUTL);
+	if (curr_st && !pr_bl) l_is_pressed = 1;
+	pr_bl = curr_st;
+
+	curr_st = digitalRead(BUTR);
+	if (curr_st && !pr_br) r_is_pressed = 1;
+	pr_br = curr_st;
+
+}
+
+
+void showSelectedVar(void){
+	if(cntr & (0x80>>var_ptr)){
+		digitalWrite(LED1, HIGH);
+	}else{
+		digitalWrite(LED1, LOW);
+	}
+	cntr++;
 }
